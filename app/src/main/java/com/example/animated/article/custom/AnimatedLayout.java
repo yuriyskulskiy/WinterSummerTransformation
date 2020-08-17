@@ -6,12 +6,18 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Path;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
+import android.util.TypedValue;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.dynamicanimation.animation.DynamicAnimation;
+import androidx.dynamicanimation.animation.FlingAnimation;
+import androidx.dynamicanimation.animation.FloatPropertyCompat;
 
 import com.example.animated.R;
 
@@ -25,6 +31,31 @@ public class AnimatedLayout extends ConstraintLayout {
     private static final int FROM_LEFT_TO_RIGHT = 1;
     private static final int FROM_RIGHT_TO_LEFT = 2;
     private static int IDLE_ANIMATION_STATE = 3;
+
+    private float MIN_FLING_START_VELOCITY_DP = 500;
+
+    private float mCurrentMinFlingVelocityPx;
+    private VelocityTracker mVelocityTracker;
+    private boolean isTouching = false;
+    private FlingAnimation mFling = new FlingAnimation(this,
+            new FloatPropertyCompat<AnimatedLayout>("offset") {
+
+                @Override
+                public float getValue(AnimatedLayout object) {
+                    return object.getOffset();
+
+                }
+
+                @Override
+                public void setValue(AnimatedLayout object, float value) {
+                    object.updateOffset(value);
+                    object.invalidate();
+                }
+            });
+
+    private float getOffset() {
+        return mOffsetValue;
+    }
 
     private ImageView mBackgroundImg;
     private TextView mTitleTV;
@@ -60,6 +91,9 @@ public class AnimatedLayout extends ConstraintLayout {
         super.onSizeChanged(w, h, oldw, oldh);
         initIdleState(w);
         mScreenShotBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+
+        mCurrentMinFlingVelocityPx = convertDpToPixel(MIN_FLING_START_VELOCITY_DP, getContext());
+
     }
 
     @Override
@@ -73,6 +107,32 @@ public class AnimatedLayout extends ConstraintLayout {
 
     private void init() {
         mPath = new Path();
+
+        mFling.addEndListener(new DynamicAnimation.OnAnimationEndListener() {
+            @Override
+            public void onAnimationEnd(DynamicAnimation animation, boolean canceled, float value, float velocity) {
+                if (!canceled) {
+                    if (mOffsetValue == 0 || mOffsetValue == getWidth()) {
+                        //correct ending
+                        mCurrentAnimation = IDLE_ANIMATION_STATE;
+                        if (mOffsetValue == 0) {
+                            mIdleState = WINTER_STATE;
+                            applyWinter();
+                        } else {
+                            mIdleState = SUMMER_STATE;
+                            applySummer();
+                        }
+                    } else {
+                        applyIdleState();
+                    }
+                } else {
+                    if (!isTouching) {
+                        applyIdleState();
+                    }
+                }
+                invalidate();
+            }
+        });
     }
 
     private void initIdleState(int w) {
@@ -123,12 +183,23 @@ public class AnimatedLayout extends ConstraintLayout {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        isTouching = true;
+        mFling.cancel();
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
                 mPreviousTouchX = event.getX();
+                if (mVelocityTracker == null) {
+                    // Retrieve a new VelocityTracker object to watch the velocity
+                    // of a motion.
+                    mVelocityTracker = VelocityTracker.obtain();
+                } else {
+                    // Reset the velocity tracker back to its initial state.
+                    mVelocityTracker.clear();
+                }
+                mVelocityTracker.addMovement(event);
                 return true;
             case MotionEvent.ACTION_MOVE:
-
+                mVelocityTracker.addMovement(event);
                 float dx = event.getX() - mPreviousTouchX;
                 mPreviousTouchX = event.getX();
 
@@ -165,21 +236,54 @@ public class AnimatedLayout extends ConstraintLayout {
                 return true;
             case MotionEvent.ACTION_CANCEL:
             case MotionEvent.ACTION_UP:
-                mCurrentAnimation = IDLE_ANIMATION_STATE;
-                mPreviousTouchX = -1;
-                if (mOffsetValue < getWidth() / 2f) {
-                    mIdleState = WINTER_STATE;
-                    updateOffset(0);
-                    applyWinter();
+                if (needToFling()) {
+                    mVelocityTracker.addMovement(event);
+                    mVelocityTracker.computeCurrentVelocity(1000);
+                    float velocityX = mVelocityTracker.getXVelocity();
+
+                    if (Math.abs(velocityX) < mCurrentMinFlingVelocityPx) {
+                        if (mOffsetValue < getWidth() / 2f) {
+                            velocityX = -mCurrentMinFlingVelocityPx;
+                        } else {
+                            velocityX = +mCurrentMinFlingVelocityPx;
+                        }
+                    }
+                    mFling.setStartVelocity(velocityX)
+                            .setMinValue(0)
+                            .setMaxValue(getWidth())
+                            .setFriction(0.1f)
+                            .start();
+                    mPreviousTouchX = -1;
                 } else {
-                    mIdleState = SUMMER_STATE;
-                    updateOffset(getWidth());
-                    applySummer();
+                    applyIdleState();
+                    invalidate();
                 }
-                invalidate();
+                if (mVelocityTracker != null) {
+                    mVelocityTracker.recycle();
+                    mVelocityTracker = null;
+                }
+                isTouching = false;
                 return true;
             default:
                 return false;
+        }
+    }
+
+    private boolean needToFling() {
+        return 0 < mOffsetValue && mOffsetValue < getWidth();
+    }
+
+    private void applyIdleState() {
+        mCurrentAnimation = IDLE_ANIMATION_STATE;
+        mPreviousTouchX = -1;
+        if (mOffsetValue < getWidth() / 2f) {
+            mIdleState = WINTER_STATE;
+            updateOffset(0);
+            applyWinter();
+        } else {
+            mIdleState = SUMMER_STATE;
+            updateOffset(getWidth());
+            applySummer();
         }
     }
 
@@ -340,6 +444,12 @@ public class AnimatedLayout extends ConstraintLayout {
         mWeatherIcon.setBorderColor(Color.BLACK);
     }
     //endregion
+
+    private static float convertDpToPixel(float valueDp, Context context) {
+        DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, valueDp,
+                displayMetrics);
+    }
 
     private static class ScreenShotCanvas extends Canvas {
         ScreenShotCanvas(Bitmap bitmap) {
