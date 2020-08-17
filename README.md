@@ -1,2 +1,2 @@
 # WinterSummerTransformation
-![](main.gif)
+![](main_demo.gif)
