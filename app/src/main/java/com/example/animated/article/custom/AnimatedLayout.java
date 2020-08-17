@@ -6,7 +6,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Path;
 import android.util.AttributeSet;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -32,9 +31,8 @@ public class AnimatedLayout extends ConstraintLayout {
     private CircleImageView mWeatherIcon;
 
     private float mOffsetValue = -1;
-    private int mIdleState = WINTER_STATE;
+    private int mIdleState = SUMMER_STATE;
     private int mCurrentAnimation = IDLE_ANIMATION_STATE;
-    private float mPreviousTouchX = -1;
 
     private Path mPath;
 
@@ -122,68 +120,6 @@ public class AnimatedLayout extends ConstraintLayout {
     }
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        switch (event.getActionMasked()) {
-            case MotionEvent.ACTION_DOWN:
-                mPreviousTouchX = event.getX();
-                return true;
-            case MotionEvent.ACTION_MOVE:
-
-                float dx = event.getX() - mPreviousTouchX;
-                mPreviousTouchX = event.getX();
-
-                if (dx == 0) {
-                    return false;
-                }
-                if (!isScrollingPossible(dx)) {
-                    return false;
-                }
-
-                float newOffset;
-                if (dx > 0) {
-                    newOffset = (mOffsetValue + dx) > getWidth() ?
-                            getWidth() : mOffsetValue + dx;
-                } else {
-                    newOffset = (mOffsetValue + dx) < 0 ? 0 : mOffsetValue + dx;
-                }
-
-                if (mCurrentAnimation == IDLE_ANIMATION_STATE) {
-                    performScreenShot();
-                    if (mOffsetValue == getWidth()) {
-                        applyWinter();
-                    } else if (mOffsetValue == 0) {
-                        applySummer();
-                    } else {
-                        throw new IllegalStateException("Offset value has " +
-                                "to be only 0 or equals layout width during" +
-                                " IDLE_ANIMATION_STATE");
-                    }
-                    mCurrentAnimation = (dx > 0) ? FROM_LEFT_TO_RIGHT : FROM_RIGHT_TO_LEFT;
-                }
-                updateOffset(newOffset);
-                invalidate();
-                return true;
-            case MotionEvent.ACTION_CANCEL:
-            case MotionEvent.ACTION_UP:
-                mCurrentAnimation = IDLE_ANIMATION_STATE;
-                mPreviousTouchX = -1;
-                if (mOffsetValue < getWidth() / 2f) {
-                    mIdleState = WINTER_STATE;
-                    updateOffset(0);
-                    applyWinter();
-                } else {
-                    mIdleState = SUMMER_STATE;
-                    updateOffset(getWidth());
-                    applySummer();
-                }
-                invalidate();
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    @Override
     protected void onDraw(Canvas canvas) {
         setWillNotDraw(false);
         if (canvas instanceof ScreenShotCanvas) {
@@ -221,22 +157,6 @@ public class AnimatedLayout extends ConstraintLayout {
     private void performScreenShot() {
         Canvas canvas = new ScreenShotCanvas(mScreenShotBitmap);
         this.draw(canvas);
-    }
-
-    private boolean isScrollingPossible(float dx) {
-        if (dx == 0) {
-            throw new IllegalArgumentException("dx can not be 0 in this block");
-        }
-        return (!(dx > 0) || canScrollToRight(dx))
-                && (!(dx < 0) || canScrollToLeft(dx));
-    }
-
-    private boolean canScrollToRight(float dx) {
-        return mOffsetValue < getWidth();
-    }
-
-    private boolean canScrollToLeft(float dx) {
-        return mOffsetValue > 0;
     }
 
     private void displayScreenShot(Canvas canvas) {
@@ -301,7 +221,7 @@ public class AnimatedLayout extends ConstraintLayout {
         mTitleTV.post(new Runnable() {
             @Override
             public void run() {
-                mTitleTV.requestLayout();
+                AnimatedLayout.this.getParent().requestLayout();
             }
         });
     }
@@ -313,7 +233,7 @@ public class AnimatedLayout extends ConstraintLayout {
         mTitleTV.post(new Runnable() {
             @Override
             public void run() {
-                mTitleTV.requestLayout();
+                AnimatedLayout.this.getParent().requestLayout();
             }
         });
     }
@@ -340,6 +260,56 @@ public class AnimatedLayout extends ConstraintLayout {
         mWeatherIcon.setBorderColor(Color.BLACK);
     }
     //endregion
+
+    public void animateBy(int dy) {
+        float newOffset;
+        if (dy > 0) {
+            newOffset = (mOffsetValue - dy) < 0 ? 0 : mOffsetValue - dy;
+        } else {
+            //scroll to the left
+            newOffset = (mOffsetValue - dy) > getWidth() ? getWidth() : mOffsetValue - dy;
+        }
+
+        if (mCurrentAnimation == IDLE_ANIMATION_STATE) {
+            //start from idle state
+            mCurrentAnimation = (dy < 0) ? FROM_LEFT_TO_RIGHT : FROM_RIGHT_TO_LEFT;
+
+            performScreenShot();
+            if (mIdleState == SUMMER_STATE) {
+                applyWinter();
+            } else {
+                applySummer();
+            }
+        }
+
+        if (newOffset == 0 || newOffset == getWidth()) {
+            mIdleState = newOffset == 0 ? WINTER_STATE : SUMMER_STATE;
+            if (mIdleState == SUMMER_STATE) {
+                applySummer();
+            } else {
+                applyWinter();
+            }
+            mCurrentAnimation = IDLE_ANIMATION_STATE;
+        }
+        updateOffset(newOffset);
+        invalidate();
+    }
+
+    public boolean isForwardAnimationPossible() {
+        return mOffsetValue > 0;
+    }
+
+    public boolean isReverseAnimationPossible() {
+        return mOffsetValue < getWidth();
+    }
+
+    public void invalidateText() {
+        if (mIdleState == WINTER_STATE) {
+            applyWinterTitleTV();
+        } else {
+            applySummerTitleTV();
+        }
+    }
 
     private static class ScreenShotCanvas extends Canvas {
         ScreenShotCanvas(Bitmap bitmap) {
