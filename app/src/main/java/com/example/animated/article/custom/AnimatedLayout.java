@@ -203,11 +203,11 @@ public class AnimatedLayout extends ConstraintLayout {
     }
 
     private void applySummerImageBackground() {
-        mBackgroundImg.setImageResource(R.drawable.summer_550_309);
+        mBackgroundImg.setImageResource(R.drawable.parallax_summer_440_309);
     }
 
     private void applyWinterImageBackground() {
-        mBackgroundImg.setImageResource(R.drawable.winter_550_309);
+        mBackgroundImg.setImageResource(R.drawable.parallax_winter_440_309);
     }
 
     private void applySummerTitleTV() {
@@ -293,6 +293,13 @@ public class AnimatedLayout extends ConstraintLayout {
         }
         updateOffset(newOffset);
         invalidate();
+    }
+
+    public void applyParallax(float translateValue) {
+        mBackgroundImg.setTranslationY(translateValue - this.getHeight() / 8f);
+        mTitleTV.setTranslationY(+translateValue * 2);
+        mProfileCircleIV.setTranslationY(translateValue * 2);
+        mWeatherIcon.setTranslationY(translateValue * 2);
     }
 
     public boolean isForwardAnimationPossible() {

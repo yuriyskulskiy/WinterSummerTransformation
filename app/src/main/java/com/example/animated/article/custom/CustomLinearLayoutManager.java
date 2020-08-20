@@ -2,7 +2,6 @@ package com.example.animated.article.custom;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -35,7 +34,8 @@ public class CustomLinearLayoutManager extends LinearLayoutManager {
         AnimatedLayout animatedLayout = null;
         if (parentLayout != null) {
             animatedLayout = parentLayout.findViewById(R.id.transformItem);
-            // todo add parallax in next article
+            float translateValue = computeCurrentParallaxOffset(parentLayout);
+            animatedLayout.applyParallax(translateValue);
         }
 
         if (needToRunAnimation(dy, animatedLayout)) {
@@ -43,8 +43,18 @@ public class CustomLinearLayoutManager extends LinearLayoutManager {
             return dy;
         } else {
             return super.scrollVerticallyBy(dy, recycler, state);
-
         }
+    }
+
+    private float computeCurrentParallaxOffset(View animatedItem) {
+        float parallaxOffsetMax = animatedItem.getHeight() / 8f;
+        float centerRecyclerViewY = computeRecyclerViewCenterY();
+        float fulOffsetFromCenterPx = animatedItem.getHeight() / 2f + centerRecyclerViewY;
+        float centerItemY = computeItemCenterY(animatedItem);
+        float currentOffsetFromCenterPx = centerRecyclerViewY - centerItemY;
+        float normalizedCurrentScrollOffset = currentOffsetFromCenterPx / fulOffsetFromCenterPx;
+        float translateFromCenterY = normalizedCurrentScrollOffset * parallaxOffsetMax;
+        return translateFromCenterY;
     }
 
     private ConstraintLayout findAnimatedLayout() {
