@@ -1,5 +1,18 @@
 These UI implementations are covered in the following articles:
 
+
+
+
+
+ - [Animated UI State Change Part 4. RecyclerView item with custom scrolling behavior](https://medium.com/@yuriyskul/animated-ui-state-change-part-4-recyclerview-item-with-custom-scrolling-behavior-a9da35fef7f0)
+    Branch: `solution_part_4`
+
+   ![Uploading winter_summer_4_gh.gif…]()
+
+
+ 
+ 
+ 
  - [Animated UI State Change Based on Clipping Path for Canvas. Part 1](https://medium.com/@yuriyskul/animated-ui-state-change-based-on-clipping-path-for-canvas-1af0cb148542)
    Branch: `solution_part_1'
    
@@ -16,6 +29,10 @@ These UI implementations are covered in the following articles:
     Branch: `solution_part_3`
  
 ![winter_summer_3_gh](https://github.com/user-attachments/assets/2d2f7243-b448-4d31-abbd-5bef4146a93a)
+
+
+
+   
 
 
 
