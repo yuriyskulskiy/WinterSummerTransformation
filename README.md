@@ -1,13 +1,18 @@
-These UI implementations are covered in the following articles:
+  ## These UI implementations are covered in the following articles
 
+  • Starter code for the next part is the previous part’s solution code.
 
+- [Animated UI State Change Part 5. Add parallax effect](https://medium.com/@yuriyskul/animated-ui-state-change-part-5-add-parallax-effect-7ec17a34a4c5)
+    Branch: `solution_part_5_parallax`
 
+![winter_summer_5_gh](https://github.com/user-attachments/assets/52b5aef3-cbe9-4f84-aa4e-f120b20b3c96)
 
 
  - [Animated UI State Change Part 4. RecyclerView item with custom scrolling behavior](https://medium.com/@yuriyskul/animated-ui-state-change-part-4-recyclerview-item-with-custom-scrolling-behavior-a9da35fef7f0)
     Branch: `solution_part_4`
 
-   ![Uploading winter_summer_4_gh.gif…]()
+ ![winter_summer_4_gh](https://github.com/user-attachments/assets/03c92fd2-5ccb-434c-9569-b3b1ee1e75eb)
+
 
 
   - [Animated UI State Change Part 3. Add Fling with the help of DynamicAnimation library](https://medium.com/@yuriyskul/animated-ui-state-change-part-3-add-fling-with-the-help-of-dynamicanimation-library-9c9185670417)
