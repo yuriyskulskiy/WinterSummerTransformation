@@ -12,7 +12,7 @@ These UI implementations are covered in the following articles:
 ![winter_summer_1_gh](https://github.com/user-attachments/assets/ed956c1d-d18e-4c9a-adf0-d45a5e474e89)
 
 
-  - [Animated UI State Change Part 3. Add Fling with the help of DynamicAnimation library](https://medium.com/@yuriyskul/animated-ui-state-change-part-3-add-fling-with-the-help-of-dynamicanimation-library-
+ - [Animated UI State Change Part 3. Add Fling with the help of DynamicAnimation library](https://medium.com/@yuriyskul/animated-ui-state-change-part-3-add-fling-with-the-help-of-dynamicanimation-library-
   9c9185670417)
     Branch: `solution_part_3`
  
